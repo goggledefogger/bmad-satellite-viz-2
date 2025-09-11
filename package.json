@@ -1,0 +1,49 @@
+{
+  "name": "bmad-satellite-viz-2",
+  "version": "1.0.0",
+  "description": "Beautiful 3D satellite visualization platform for education and space awareness",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm --filter frontend dev",
+    "test": "pnpm -r test",
+    "test:unit": "pnpm -r test:unit",
+    "test:integration": "pnpm -r test:integration",
+    "test:e2e": "playwright test",
+    "test:a11y": "pnpm -r test:a11y",
+    "lint": "pnpm -r lint",
+    "lint:fix": "pnpm -r lint:fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "type-check": "pnpm -r type-check",
+    "clean": "pnpm -r clean",
+    "install:all": "pnpm install",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.1.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0",
+  "keywords": [
+    "satellite",
+    "visualization",
+    "3d",
+    "space",
+    "education",
+    "three.js",
+    "react"
+  ],
+  "author": "BMad Development Team",
+  "license": "MIT"
+}
