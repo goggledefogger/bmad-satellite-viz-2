@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "build": "pnpm -r build",
-    "dev": "pnpm --parallel --filter @frontend/app dev --filter @backend/api start:dev",
+    "dev": "./scripts/dev.sh",
     "dev:frontend": "pnpm --filter @frontend/app dev",
     "dev:backend": "pnpm --filter @backend/api start:dev",
     "test": "pnpm -r test",

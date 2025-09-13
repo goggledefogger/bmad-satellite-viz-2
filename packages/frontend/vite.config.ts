@@ -14,6 +14,7 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
+    strictPort: true, // Fail if port is in use instead of auto-switching
   },
   build: {
     outDir: 'dist',
