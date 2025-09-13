@@ -104,8 +104,7 @@ export class RedisClient {
 
   async expire(key: string, seconds: number): Promise<boolean> {
     await this.ensureConnected();
-    const result = await this.client.expire(key, seconds);
-    return result === 1;
+    return await this.client.expire(key, seconds);
   }
 
   async ttl(key: string): Promise<number> {
@@ -144,7 +143,7 @@ export class RedisClient {
     return await this.client.hDel(key, field);
   }
 
-  async hExists(key: string, field: string): Promise<number> {
+  async hExists(key: string, field: string): Promise<boolean> {
     await this.ensureConnected();
     return await this.client.hExists(key, field);
   }
@@ -164,7 +163,7 @@ export class RedisClient {
     return await this.client.sRem(key, members);
   }
 
-  async sIsMember(key: string, member: string): Promise<number> {
+  async sIsMember(key: string, member: string): Promise<boolean> {
     await this.ensureConnected();
     return await this.client.sIsMember(key, member);
   }

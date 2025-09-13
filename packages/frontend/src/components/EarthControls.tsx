@@ -158,7 +158,7 @@ export const EarthControls: React.FC<EarthControlsProps> = ({
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .earth-controls {
           position: fixed;
           top: 20px;

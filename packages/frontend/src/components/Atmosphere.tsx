@@ -1,6 +1,6 @@
 import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Mesh, ShaderMaterial, Vector3 } from 'three';
+import { Mesh, ShaderMaterial, Vector3, Color, BufferGeometry, BufferAttribute } from 'three';
 
 interface AtmosphereProps {
   /** Enable atmospheric glow effect */
@@ -31,7 +31,7 @@ export const Atmosphere: React.FC<AtmosphereProps> = ({
       uniforms: {
         time: { value: 0 },
         intensity: { value: intensity },
-        color: { value: new Vector3().setHex(parseInt(color.replace('#', ''), 16)) },
+        color: { value: new Color(color) },
         earthRadius: { value: earthRadius }
       },
       vertexShader: `
@@ -80,7 +80,7 @@ export const Atmosphere: React.FC<AtmosphereProps> = ({
 
   // Particle system for atmospheric effects
   const particleGeometry = useMemo(() => {
-    const geometry = new THREE.BufferGeometry();
+    const geometry = new BufferGeometry();
     const positions = new Float32Array(1000 * 3);
     const colors = new Float32Array(1000 * 3);
 
@@ -100,8 +100,8 @@ export const Atmosphere: React.FC<AtmosphereProps> = ({
       colors[i * 3 + 2] = 0.8 + Math.random() * 0.2; // B
     }
 
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute('position', new BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new BufferAttribute(colors, 3));
 
     return geometry;
   }, [earthRadius]);

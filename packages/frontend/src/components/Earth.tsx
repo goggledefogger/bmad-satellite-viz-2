@@ -1,6 +1,6 @@
-import React, { useRef, useMemo, useState, useEffect } from 'react';
+import React, { useRef, useMemo, useState, useEffect, forwardRef } from 'react';
 import { useFrame, useLoader } from '@react-three/fiber';
-import { Mesh, TextureLoader, RepeatWrapping, ShaderMaterial, Vector3 } from 'three';
+import { Mesh, TextureLoader, RepeatWrapping, LinearFilter, LinearMipmapLinearFilter } from 'three';
 import { useTexture } from '@react-three/drei';
 
 interface EarthProps {
@@ -14,12 +14,12 @@ interface EarthProps {
   scale?: number;
 }
 
-export const Earth: React.FC<EarthProps> = ({
+export const Earth = forwardRef<Mesh, EarthProps>(({
   enableRotation = true,
   rotationSpeed = 1.0,
   enableAtmosphere = true,
   scale = 1.0
-}) => {
+}, ref) => {
   const meshRef = useRef<Mesh>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -82,8 +82,8 @@ export const Earth: React.FC<EarthProps> = ({
     texture.wrapS = RepeatWrapping;
     texture.wrapT = RepeatWrapping;
     texture.generateMipmaps = true;
-    texture.minFilter = texture.constructor.LinearMipmapLinearFilter;
-    texture.magFilter = texture.constructor.LinearFilter;
+    texture.minFilter = LinearMipmapLinearFilter;
+    texture.magFilter = LinearFilter;
 
     return texture;
   }, []);
@@ -130,11 +130,9 @@ export const Earth: React.FC<EarthProps> = ({
     <group scale={[scale, scale, scale]}>
       {/* Main Earth mesh */}
       <mesh
-        ref={meshRef}
+        ref={ref}
         castShadow
         receiveShadow
-        aria-label="3D Earth model with continents, oceans, and atmospheric effects"
-        role="img"
       >
         <sphereGeometry args={[1, 128, 128]} />
         <meshStandardMaterial
@@ -174,4 +172,4 @@ export const Earth: React.FC<EarthProps> = ({
       )}
     </group>
   );
-};
+});

@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState } from 'react';
+import React, { useRef, useCallback, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Mesh } from 'three';
 
@@ -117,7 +117,7 @@ export function useEarthRotation(
   const getState = useCallback(() => state, [state]);
 
   // Animation frame update
-  useFrame((state, delta) => {
+  useFrame((_, delta) => {
     if (!meshRef.current || !state.isRotating) return;
 
     const currentTime = performance.now();
@@ -199,7 +199,7 @@ export function useEarthRotationWithPerformance(
   };
 } {
   const controls = useEarthRotation(config, meshRef);
-  const [performance, setPerformance] = useState({
+  const [performanceMetrics, setPerformanceMetrics] = useState({
     fps: 60,
     frameTime: 16.67,
     isSmooth: true
@@ -218,7 +218,7 @@ export function useEarthRotationWithPerformance(
       const frameTime = 1000 / fps;
       const isSmooth = fps >= 55; // Consider smooth if 55+ FPS
 
-      setPerformance({ fps, frameTime, isSmooth });
+      setPerformanceMetrics({ fps, frameTime, isSmooth });
 
       frameCountRef.current = 0;
       lastFpsUpdateRef.current = currentTime;
@@ -227,6 +227,6 @@ export function useEarthRotationWithPerformance(
 
   return {
     ...controls,
-    performance
+    performance: performanceMetrics
   };
 }
