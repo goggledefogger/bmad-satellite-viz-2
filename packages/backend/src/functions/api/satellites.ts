@@ -1,37 +1,57 @@
 import { Request, Response } from 'express';
-import type { ApiResponse, SatelliteData } from '@shared/types';
+import type { ApiResponse, SatelliteData, SatelliteFilter, SatelliteStats } from '@shared/types';
+import { SatelliteService } from '../../services/satellite/satelliteService';
 
-// Mock satellite data for initial setup
-const mockSatellites: SatelliteData[] = [
-  {
-    id: '25544',
-    name: 'International Space Station',
-    type: 'space-station',
-    position: { x: 0, y: 0, z: 0 },
-    orbitalElements: {
-      semiMajorAxis: 6798.14,
-      eccentricity: 0.0001647,
-      inclination: 51.6416,
-      rightAscensionOfAscendingNode: 0,
-      argumentOfPeriapsis: 0,
-      meanAnomaly: 0,
-      epoch: new Date().toISOString(),
-    },
-    status: 'active',
-    lastUpdated: new Date().toISOString(),
-  },
-];
+// Initialize satellite service
+const satelliteService = new SatelliteService();
 
 export const getSatellites = async (req: Request, res: Response): Promise<void> => {
   try {
+    const { filter, page, limit } = req.query;
+
+    // Parse filter if provided
+    const filterObj = filter ? JSON.parse(filter as string) as SatelliteFilter : undefined;
+
+    // Get satellites from service
+    const satellites = await satelliteService.getActiveSatellites(filterObj);
+
+    // Apply pagination if requested
+    if (page && limit) {
+      const pageNum = parseInt(page as string) || 1;
+      const limitNum = parseInt(limit as string) || 10;
+      const startIndex = (pageNum - 1) * limitNum;
+      const endIndex = startIndex + limitNum;
+
+      const paginatedSatellites = satellites.slice(startIndex, endIndex);
+
+      const response = {
+        data: paginatedSatellites,
+        success: true,
+        timestamp: new Date().toISOString(),
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total: satellites.length,
+          totalPages: Math.ceil(satellites.length / limitNum),
+          hasNext: pageNum < Math.ceil(satellites.length / limitNum),
+          hasPrevious: pageNum > 1,
+        },
+      };
+
+      res.json(response);
+      return;
+    }
+
     const response: ApiResponse<SatelliteData[]> = {
-      data: mockSatellites,
+      data: satellites,
       success: true,
       timestamp: new Date().toISOString(),
     };
 
     res.json(response);
   } catch (error) {
+    console.error('Failed to fetch satellites:', error);
+
     const response: ApiResponse<null> = {
       data: null,
       success: false,
@@ -46,7 +66,7 @@ export const getSatellites = async (req: Request, res: Response): Promise<void> 
 export const getSatelliteById = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const satellite = mockSatellites.find(s => s.id === id);
+    const satellite = await satelliteService.getSatelliteById(id);
 
     if (!satellite) {
       const response: ApiResponse<null> = {
@@ -68,10 +88,42 @@ export const getSatelliteById = async (req: Request, res: Response): Promise<voi
 
     res.json(response);
   } catch (error) {
+    console.error('Failed to fetch satellite:', error);
+
     const response: ApiResponse<null> = {
       data: null,
       success: false,
       message: 'Failed to fetch satellite',
+      timestamp: new Date().toISOString(),
+    };
+
+    res.status(500).json(response);
+  }
+};
+
+export const getSatelliteStats = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { filter } = req.query;
+
+    // Parse filter if provided
+    const filterObj = filter ? JSON.parse(filter as string) as SatelliteFilter : undefined;
+
+    const stats = await satelliteService.getSatelliteStats(filterObj);
+
+    const response: ApiResponse<SatelliteStats> = {
+      data: stats,
+      success: true,
+      timestamp: new Date().toISOString(),
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Failed to fetch satellite stats:', error);
+
+    const response: ApiResponse<null> = {
+      data: null,
+      success: false,
+      message: 'Failed to fetch satellite statistics',
       timestamp: new Date().toISOString(),
     };
 

@@ -1,13 +1,16 @@
-import React, { Suspense, useState } from 'react';
+import React, { Suspense, useState, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Stats } from '@react-three/drei';
 import { Earth } from './Earth';
+import { Atmosphere } from './Atmosphere';
+import { EarthControls } from './EarthControls';
 import { Satellites } from './Satellites';
 import { SceneLighting } from './SceneLighting';
 import { PerformanceMonitor } from './PerformanceMonitor';
 import { PerformanceCollector } from './PerformanceCollector';
 import { WebGLFallback } from './WebGLFallback';
 import { CameraControls } from './CameraControls';
+import { useEarthPerformance } from '../hooks/useEarthPerformance';
 
 interface PerformanceData {
   fps: number;
@@ -18,6 +21,7 @@ interface PerformanceData {
 }
 
 export const SatelliteVisualization: React.FC = () => {
+  const earthRef = useRef(null);
   const [performanceData, setPerformanceData] = useState<PerformanceData>({
     fps: 0,
     frameTime: 0,
@@ -25,6 +29,17 @@ export const SatelliteVisualization: React.FC = () => {
     drawCalls: 0,
     triangles: 0,
   });
+
+  // Earth-specific state
+  const [earthConfig, setEarthConfig] = useState({
+    enableRotation: true,
+    rotationSpeed: 1.0,
+    enableAtmosphere: true,
+    scale: 1.0
+  });
+
+  // Performance monitoring for Earth
+  const { metrics: earthPerformance } = useEarthPerformance({}, earthRef);
 
   return (
     <div className="w-full h-full relative">
@@ -51,7 +66,19 @@ export const SatelliteVisualization: React.FC = () => {
       >
         <Suspense fallback={null}>
           <SceneLighting />
-          <Earth />
+          <Earth
+            ref={earthRef}
+            enableRotation={earthConfig.enableRotation}
+            rotationSpeed={earthConfig.rotationSpeed}
+            enableAtmosphere={earthConfig.enableAtmosphere}
+            scale={earthConfig.scale}
+          />
+          <Atmosphere
+            enableGlow={earthConfig.enableAtmosphere}
+            enableParticles={earthConfig.enableAtmosphere}
+            intensity={0.3}
+            earthRadius={earthConfig.scale}
+          />
           <Satellites />
           <CameraControls />
           <PerformanceCollector onPerformanceUpdate={setPerformanceData} />
@@ -79,6 +106,18 @@ export const SatelliteVisualization: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Earth Controls */}
+      <EarthControls
+        onRotationToggle={(enabled) => setEarthConfig(prev => ({ ...prev, enableRotation: enabled }))}
+        onRotationSpeedChange={(speed) => setEarthConfig(prev => ({ ...prev, rotationSpeed: speed }))}
+        onAtmosphereToggle={(enabled) => setEarthConfig(prev => ({ ...prev, enableAtmosphere: enabled }))}
+        onScaleChange={(scale) => setEarthConfig(prev => ({ ...prev, scale }))}
+        initialRotationEnabled={earthConfig.enableRotation}
+        initialRotationSpeed={earthConfig.rotationSpeed}
+        initialAtmosphereEnabled={earthConfig.enableAtmosphere}
+        initialScale={earthConfig.scale}
+      />
 
       {/* WebGL Fallback */}
       <WebGLFallback />

@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "packages/backend/src/functions/api/*.ts",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "packages/backend/src/**/*",
+          "packages/shared/src/**/*"
+        ]
+      }
+    },
+    {
+      "src": "packages/frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/packages/backend/src/functions/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/packages/frontend/dist/$1"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "LOG_LEVEL": "info"
+  },
+  "functions": {
+    "packages/backend/src/functions/api/*.ts": {
+      "maxDuration": 30
+    }
+  }
+}
+
+
