@@ -2,6 +2,46 @@ import React from 'react';
 import ReactThreeTestRenderer from '@react-three/test-renderer';
 import { Earth } from '../../src/components/Earth';
 
+// Scope Canvas mocks to this test to avoid global bloat
+Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
+  value: jest.fn((contextType) => {
+    if (contextType === '2d') {
+      return {
+        createRadialGradient: jest.fn().mockReturnValue({
+          addColorStop: jest.fn(),
+        }),
+        createLinearGradient: jest.fn().mockReturnValue({
+          addColorStop: jest.fn(),
+        }),
+        fillRect: jest.fn(),
+        clearRect: jest.fn(),
+        getImageData: jest.fn(() => ({ data: new Array(4) })),
+        putImageData: jest.fn(),
+        createImageData: jest.fn(() => ({ data: new Array(4) })),
+        setTransform: jest.fn(),
+        drawImage: jest.fn(),
+        save: jest.fn(),
+        restore: jest.fn(),
+        beginPath: jest.fn(),
+        moveTo: jest.fn(),
+        lineTo: jest.fn(),
+        closePath: jest.fn(),
+        stroke: jest.fn(),
+        fill: jest.fn(),
+        measureText: jest.fn(() => ({ width: 0 })),
+        transform: jest.fn(),
+        rect: jest.fn(),
+        arc: jest.fn(),
+      };
+    }
+    return null;
+  }),
+});
+
+Object.defineProperty(HTMLCanvasElement.prototype, 'toDataURL', {
+  value: jest.fn(() => 'data:image/png;base64,mock-data-url'),
+});
+
 // Minimal mock for texture loading only
 jest.mock('three', () => ({
   ...jest.requireActual('three'),

@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Beautiful 3D satellite visualization platform for education and space awareness",
   "private": true,
+  "type": "module",
   "workspaces": [
     "packages/*"
   ],
