@@ -175,21 +175,23 @@ export class TLEParser {
    * Validate TLE checksum
    */
   private static validateChecksum(line: string): boolean {
-    const checksum = parseInt(line[68]);
-    let calculatedChecksum = 0;
+    // Per TLE specification, checksum is the modulo-10 sum of all digits
+    // plus 1 for each minus sign in columns 1–68. All other characters count as 0.
+    const checksumChar = line[68];
+    const expected = isNaN(Number(checksumChar)) ? -1 : Number(checksumChar);
+    let sum = 0;
 
     for (let i = 0; i < 68; i++) {
-      const char = line[i];
-      if (char === '-') {
-        calculatedChecksum += 1;
-      } else if (char >= '0' && char <= '9') {
-        calculatedChecksum += parseInt(char);
-      } else if (char >= 'A' && char <= 'Z') {
-        calculatedChecksum += char.charCodeAt(0) - 55;
+      const c = line[i];
+      if (c === '-') {
+        sum += 1;
+      } else if (c >= '0' && c <= '9') {
+        sum += c.charCodeAt(0) - '0'.charCodeAt(0);
       }
     }
 
-    return (calculatedChecksum % 10) === checksum;
+    if (expected < 0) return false;
+    return (sum % 10) === expected;
   }
 
   /**
@@ -240,6 +242,5 @@ export class TLEParser {
 
 // Import SatelliteData type for the return type
 import { SatelliteData } from '@shared/types/satellite';
-
 
 

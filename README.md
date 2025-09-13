@@ -43,15 +43,16 @@ A beautiful, browser-based 3D satellite visualization platform that makes space 
    ```
 
 5. **Open your browser**
-   Navigate to `http://localhost:3000`
+   - Frontend: `http://localhost:5173`
+   - API (if running backend dev server): `http://localhost:3000`
 
 ## 📁 Project Structure
 
 ```
 bmad-satellite-viz-2/
 ├── packages/
-│   ├── frontend/          # React frontend application
-│   ├── backend/           # Serverless backend functions
+│   ├── frontend/          # React frontend application (Vite)
+│   ├── backend/           # Backend API (Express for local dev, Vercel serverless functions for deploy)
 │   ├── shared/            # Shared types and utilities
 │   └── ui/                # Shared UI components
 ├── docs/                  # Documentation
@@ -63,7 +64,7 @@ bmad-satellite-viz-2/
 
 ### Available Scripts
 
-- `pnpm dev` - Start development server
+- `pnpm dev` - Start all package dev tasks (frontend, backend, libraries)
 - `pnpm build` - Build all packages
 - `pnpm test` - Run all tests
 - `pnpm test:unit` - Run unit tests
@@ -75,25 +76,26 @@ bmad-satellite-viz-2/
 
 ### Package Scripts
 
-Each package has its own scripts:
+Each package has its own scripts. Use workspace filters by package name:
 
 ```bash
 # Frontend
-pnpm --filter frontend dev
-pnpm --filter frontend build
-pnpm --filter frontend test
+pnpm --filter @frontend/app dev
+pnpm --filter @frontend/app build
+pnpm --filter @frontend/app test
 
 # Backend
-pnpm --filter backend build
-pnpm --filter backend test
+pnpm --filter @backend/api start:dev
+pnpm --filter @backend/api build
+pnpm --filter @backend/api test
 
-# Shared
-pnpm --filter shared build
-pnpm --filter shared test
+# Shared types
+pnpm --filter @shared/types build
+pnpm --filter @shared/types test
 
-# UI
-pnpm --filter ui build
-pnpm --filter ui test
+# UI components
+pnpm --filter @ui/components build
+pnpm --filter @ui/components test
 ```
 
 ## 🏗️ Architecture

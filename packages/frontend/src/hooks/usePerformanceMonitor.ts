@@ -1,7 +1,7 @@
 import { useRef, useCallback } from 'react';
 import { useFrame } from '@react-three/fiber';
 
-interface PerformanceStats {
+export interface PerformanceStats {
   fps: number;
   frameTime: number;
   averageFps: number;
@@ -116,4 +116,3 @@ export const usePerformanceMonitor = (options: PerformanceMonitorOptions = {}) =
     isLowPerformance: isLowPerformanceRef.current
   };
 };
-

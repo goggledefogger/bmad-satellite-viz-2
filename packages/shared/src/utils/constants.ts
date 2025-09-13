@@ -5,8 +5,7 @@
 export const API_ENDPOINTS = {
   SATELLITES: '/api/satellites',
   SATELLITE_DETAILS: '/api/satellites/:id',
-  ORBITAL_DATA: '/api/orbital-data',
-  WEBSOCKET: '/ws/satellites',
+  SATELLITES_STATS: '/api/satellites/stats',
 } as const;
 
 export const SATELLITE_TYPES = {
@@ -17,7 +16,7 @@ export const SATELLITE_TYPES = {
   NAVIGATION: 'navigation',
   SPACE_STATION: 'space-station',
   DEBRIS: 'debris',
-  OTHER: 'other',
+  UNKNOWN: 'unknown',
 } as const;
 
 export const PERFORMANCE_TARGETS = {

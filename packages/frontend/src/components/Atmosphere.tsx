@@ -1,7 +1,6 @@
 import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Mesh, ShaderMaterial, Vector3, Color, BufferGeometry, BufferAttribute } from 'three';
-import { primitive } from '@react-three/drei';
 
 interface AtmosphereProps {
   /** Enable atmospheric glow effect */

@@ -35,7 +35,9 @@ export interface ShaderCompatibility {
  */
 export const detectWebGLCapabilities = (): WebGLCapabilities => {
   const canvas = document.createElement('canvas');
-  const gl = canvas.getContext('webgl2') || canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  const gl = (canvas.getContext('webgl2') as WebGL2RenderingContext | null)
+    || (canvas.getContext('webgl') as WebGLRenderingContext | null)
+    || (canvas.getContext('experimental-webgl') as WebGLRenderingContext | null);
 
   if (!gl) {
     return {
@@ -58,16 +60,16 @@ export const detectWebGLCapabilities = (): WebGLCapabilities => {
     };
   }
 
-  const isWebGL2 = gl instanceof WebGL2RenderingContext;
-  const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+  const isWebGL2 = typeof WebGL2RenderingContext !== 'undefined' && gl instanceof WebGL2RenderingContext;
+  const debugInfo = gl.getExtension('WEBGL_debug_renderer_info') as any;
 
   return {
     version: isWebGL2 ? 2 : 1,
     isSupported: true,
     hasWebGL2: isWebGL2,
     hasWebGL1: !isWebGL2,
-    renderer: debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : 'Unknown',
-    vendor: debugInfo ? gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) : 'Unknown',
+    renderer: debugInfo ? (gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) as string) : 'Unknown',
+    vendor: debugInfo ? (gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) as string) : 'Unknown',
     maxTextureSize: gl.getParameter(gl.MAX_TEXTURE_SIZE),
     maxVertexUniforms: gl.getParameter(gl.MAX_VERTEX_UNIFORM_VECTORS),
     maxFragmentUniforms: gl.getParameter(gl.MAX_FRAGMENT_UNIFORM_VECTORS),
@@ -75,11 +77,12 @@ export const detectWebGLCapabilities = (): WebGLCapabilities => {
     aliasedLineWidthRange: gl.getParameter(gl.ALIASED_LINE_WIDTH_RANGE),
     aliasedPointSizeRange: gl.getParameter(gl.ALIASED_POINT_SIZE_RANGE),
     maxViewportDims: gl.getParameter(gl.MAX_VIEWPORT_DIMS),
-    maxAnisotropy: gl.getExtension('EXT_texture_filter_anisotropic')
-      ? gl.getParameter(gl.getExtension('EXT_texture_filter_anisotropic')!.MAX_TEXTURE_MAX_ANISOTROPY_EXT)
-      : 0,
+    maxAnisotropy: (() => {
+      const aniso = gl.getExtension('EXT_texture_filter_anisotropic') as any;
+      return aniso ? (gl.getParameter(aniso.MAX_TEXTURE_MAX_ANISOTROPY_EXT) as number) : 0;
+    })(),
     precision: 'highp',
-    extensions: gl.getSupportedExtensions() || []
+    extensions: (gl.getSupportedExtensions() || []) as string[]
   };
 };
 
@@ -231,4 +234,3 @@ export const checkWebGLSupport = (requiredFeatures: {
 
   return true;
 };
-
