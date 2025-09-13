@@ -334,3 +334,4 @@ The satellite visualization market is **moderately fragmented** with several est
 *Analysis conducted using the BMAD-METHOD™ competitive analysis framework*
 
 
+

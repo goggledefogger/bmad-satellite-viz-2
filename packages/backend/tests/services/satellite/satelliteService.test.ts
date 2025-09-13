@@ -1,20 +1,15 @@
 import { SatelliteService } from '../../../src/services/satellite/satelliteService';
+import {
+  createHttpClientMock,
+  createRedisClientMock,
+  createTLEParserStaticMock,
+  staticTLEModuleFrom,
+} from '../../utils/mocks';
 
-// Mock dependencies with proper jest mocks
-const mockHttpClient = {
-  get: jest.fn(),
-};
-
-const mockRedisClient = {
-  get: jest.fn(),
-  set: jest.fn(),
-};
-
-const mockTLEParser = {
-  parseTLE: jest.fn(),
-  parseCelesTrakTLE: jest.fn(),
-  parseSpaceTrackTLE: jest.fn(),
-};
+// Centralized mock objects
+const mockHttpClient = createHttpClientMock();
+const mockRedisClient = createRedisClientMock();
+const mockTLEParser = createTLEParserStaticMock();
 
 jest.mock('../../../src/utils/httpClient', () => ({
   createHttpClient: jest.fn(() => mockHttpClient),
@@ -28,7 +23,6 @@ jest.mock('../../../src/utils/redisClient', () => ({
 }));
 
 jest.mock('../../../src/utils/tleParser', () => ({
-  // Service uses static methods: TLEParser.parseCelesTrakTLE(...)
   TLEParser: {
     parseTLE: (...args: any[]) => (mockTLEParser.parseTLE as any)(...args),
     parseCelesTrakTLE: (...args: any[]) => (mockTLEParser.parseCelesTrakTLE as any)(...args),

@@ -1,6 +1,7 @@
 import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Mesh, ShaderMaterial, Vector3, Color, BufferGeometry, BufferAttribute } from 'three';
+import { primitive } from '@react-three/drei';
 
 interface AtmosphereProps {
   /** Enable atmospheric glow effect */
@@ -13,6 +14,12 @@ interface AtmosphereProps {
   color?: string;
   /** Earth radius for atmosphere sizing */
   earthRadius?: number;
+  /** Glow intensity multiplier */
+  glowIntensity?: number;
+  /** Animation speed for atmospheric effects */
+  animationSpeed?: number;
+  /** Enable dynamic color changes */
+  enableDynamicColors?: boolean;
 }
 
 export const Atmosphere: React.FC<AtmosphereProps> = ({
@@ -20,63 +27,117 @@ export const Atmosphere: React.FC<AtmosphereProps> = ({
   enableParticles = true,
   intensity = 0.3,
   color = '#4A90E2',
-  earthRadius = 1.0
+  earthRadius = 1.0,
+  glowIntensity = 1.0,
+  animationSpeed = 0.5,
+  enableDynamicColors = true
 }) => {
   const atmosphereRef = useRef<Mesh>(null);
   const particlesRef = useRef<Mesh>(null);
 
-  // Atmospheric glow shader material
+  // Enhanced atmospheric glow shader material
   const atmosphereMaterial = useMemo(() => {
     return new ShaderMaterial({
       uniforms: {
         time: { value: 0 },
         intensity: { value: intensity },
+        glowIntensity: { value: glowIntensity },
+        animationSpeed: { value: animationSpeed },
         color: { value: new Color(color) },
-        earthRadius: { value: earthRadius }
+        earthRadius: { value: earthRadius },
+        enableDynamicColors: { value: enableDynamicColors ? 1.0 : 0.0 }
       },
       vertexShader: `
         varying vec3 vNormal;
         varying vec3 vPosition;
+        varying vec3 vWorldPosition;
+        varying vec3 vViewDirection;
 
         void main() {
           vNormal = normalize(normalMatrix * normal);
           vPosition = position;
+          vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+          vViewDirection = normalize(cameraPosition - vWorldPosition);
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
       `,
       fragmentShader: `
         uniform float time;
         uniform float intensity;
+        uniform float glowIntensity;
+        uniform float animationSpeed;
         uniform vec3 color;
         uniform float earthRadius;
+        uniform float enableDynamicColors;
 
         varying vec3 vNormal;
         varying vec3 vPosition;
+        varying vec3 vWorldPosition;
+        varying vec3 vViewDirection;
+
+        // Noise function for atmospheric effects
+        float noise(vec3 p) {
+          return fract(sin(dot(p, vec3(12.9898, 78.233, 45.164))) * 43758.5453);
+        }
+
+        float smoothNoise(vec3 p) {
+          vec3 i = floor(p);
+          vec3 f = fract(p);
+          f = f * f * (3.0 - 2.0 * f);
+
+          float a = noise(i);
+          float b = noise(i + vec3(1.0, 0.0, 0.0));
+          float c = noise(i + vec3(0.0, 1.0, 0.0));
+          float d = noise(i + vec3(1.0, 1.0, 0.0));
+
+          return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+        }
 
         void main() {
-          // Create atmospheric glow effect
-          float fresnel = 1.0 - dot(vNormal, vec3(0.0, 0.0, 1.0));
-          fresnel = pow(fresnel, 2.0);
+          // Enhanced Fresnel-based atmospheric scattering
+          float fresnel = 1.0 - max(0.0, dot(vNormal, vViewDirection));
+          fresnel = pow(fresnel, 1.5);
 
-          // Add subtle animation
-          float pulse = sin(time * 0.5) * 0.1 + 0.9;
-
-          // Create atmospheric scattering effect
-          float distance = length(vPosition);
-          float atmosphereThickness = (distance - earthRadius) / (earthRadius * 0.1);
+          // Atmospheric thickness calculation
+          float distance = length(vWorldPosition);
+          float atmosphereThickness = (distance - earthRadius) / (earthRadius * 0.08);
           atmosphereThickness = clamp(atmosphereThickness, 0.0, 1.0);
+          atmosphereThickness = pow(atmosphereThickness, 0.5);
 
-          // Combine effects
-          float alpha = fresnel * intensity * pulse * atmosphereThickness;
-          vec3 finalColor = color * alpha;
+          // Dynamic color based on time and position
+          vec3 dynamicColor = color;
+          if (enableDynamicColors > 0.5) {
+            float colorShift = sin(time * animationSpeed + vPosition.x * 2.0) * 0.3;
+            dynamicColor = mix(color, vec3(0.6, 0.8, 1.0), colorShift * 0.5);
 
-          gl_FragColor = vec4(finalColor, alpha * 0.8);
+            // Add subtle atmospheric noise
+            float atmosphericNoise = smoothNoise(vWorldPosition * 0.5 + time * animationSpeed * 0.1);
+            dynamicColor += vec3(atmosphericNoise * 0.1);
+          }
+
+          // Enhanced animation with multiple layers
+          float pulse1 = sin(time * animationSpeed) * 0.1 + 0.9;
+          float pulse2 = sin(time * animationSpeed * 1.5 + vPosition.x * 3.0) * 0.05 + 0.95;
+          float combinedPulse = pulse1 * pulse2;
+
+          // Atmospheric glow intensity
+          float glow = fresnel * atmosphereThickness * intensity * glowIntensity * combinedPulse;
+
+          // Add subtle rim lighting
+          float rimLight = pow(fresnel, 0.5) * 0.3;
+          glow += rimLight;
+
+          // Final color calculation
+          vec3 finalColor = dynamicColor * glow;
+          float alpha = glow * 0.8;
+
+          gl_FragColor = vec4(finalColor, alpha);
         }
       `,
       transparent: true,
       side: 2 // DoubleSide
     });
-  }, [intensity, color, earthRadius]);
+  }, [intensity, glowIntensity, animationSpeed, color, earthRadius, enableDynamicColors]);
 
   // Particle system for atmospheric effects
   const particleGeometry = useMemo(() => {
@@ -110,15 +171,17 @@ export const Atmosphere: React.FC<AtmosphereProps> = ({
   useFrame((state) => {
     const time = state.clock.getElapsedTime();
 
-    // Update atmosphere shader
+    // Update atmosphere shader uniforms
     if (atmosphereRef.current && atmosphereMaterial) {
       atmosphereMaterial.uniforms.time.value = time;
+      atmosphereMaterial.uniforms.animationSpeed.value = animationSpeed;
+      atmosphereMaterial.uniforms.glowIntensity.value = glowIntensity;
     }
 
-    // Animate particles
+    // Animate particles with enhanced movement
     if (particlesRef.current && enableParticles) {
-      particlesRef.current.rotation.y += 0.001;
-      particlesRef.current.rotation.x += 0.0005;
+      particlesRef.current.rotation.y += 0.001 * animationSpeed;
+      particlesRef.current.rotation.x += 0.0005 * animationSpeed;
     }
   });
 

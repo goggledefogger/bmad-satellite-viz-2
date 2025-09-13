@@ -2,6 +2,19 @@ import React from 'react';
 import { render } from '@testing-library/react';
 import { SatelliteVisualization } from '../../src/components/SatelliteVisualization';
 
+// Scope minimal WebGL canvas stub to this test to avoid jsdom errors
+Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
+  value: jest.fn((contextType: string) => {
+    if (contextType === 'webgl' || contextType === 'webgl2' || contextType === 'experimental-webgl') {
+      return {
+        getExtension: jest.fn().mockReturnValue(null),
+        getParameter: jest.fn(),
+      } as unknown as WebGLRenderingContext;
+    }
+    return null;
+  }),
+});
+
 // Mock React Three Fiber hooks that are used outside Canvas
 jest.mock('@react-three/fiber', () => ({
   ...jest.requireActual('@react-three/fiber'),

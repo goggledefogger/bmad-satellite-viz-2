@@ -1,7 +1,10 @@
 import React, { useRef, useMemo, useState, useEffect, forwardRef } from 'react';
 import { useFrame, useLoader } from '@react-three/fiber';
-import { Mesh, TextureLoader, RepeatWrapping, LinearFilter, LinearMipmapLinearFilter } from 'three';
-import { useTexture } from '@react-three/drei';
+import { Mesh, TextureLoader, RepeatWrapping, LinearFilter, LinearMipmapLinearFilter, Vector3 } from 'three';
+import { useTexture, primitive } from '@react-three/drei';
+import { useAdaptiveShaderEffects } from '../hooks/useAdaptiveShaderEffects';
+import { ParticleSystem } from './ParticleSystem';
+import { Atmosphere } from './Atmosphere';
 
 interface EarthProps {
   /** Enable/disable Earth rotation */
@@ -12,16 +15,76 @@ interface EarthProps {
   enableAtmosphere?: boolean;
   /** Earth scale factor */
   scale?: number;
+  /** Enable artistic shader effects */
+  enableShaderEffects?: boolean;
+  /** Shimmer intensity (0-1) */
+  shimmerIntensity?: number;
+  /** Shimmer animation speed (0-5) */
+  shimmerSpeed?: number;
+  /** Glow intensity (0-1) */
+  glowIntensity?: number;
+  /** Surface displacement amount (0-1) */
+  surfaceDisplacement?: number;
+  /** Enable particle system */
+  enableParticles?: boolean;
+  /** Number of particles in the system */
+  particleCount?: number;
+  /** Size of individual particles */
+  particleSize?: number;
+  /** Color of particles (hex string) */
+  particleColor?: string;
+  /** Animation speed for particles */
+  animationSpeed?: number;
+  /** Spread radius for particles */
+  spreadRadius?: number;
+  /** Enable adaptive quality adjustment */
+  enableAdaptiveQuality?: boolean;
+  /** Target FPS for performance monitoring */
+  targetFps?: number;
 }
 
 export const Earth = forwardRef<Mesh, EarthProps>(({
   enableRotation = true,
   rotationSpeed = 1.0,
   enableAtmosphere = true,
-  scale = 1.0
+  scale = 1.0,
+  enableShaderEffects = true,
+  shimmerIntensity = 0.5,
+  shimmerSpeed = 2.0,
+  glowIntensity = 0.3,
+  surfaceDisplacement = 0.2,
+  enableParticles = true,
+  particleCount = 500,
+  particleSize = 0.005,
+  particleColor = "#ffffff",
+  animationSpeed = 0.5,
+  spreadRadius = 1.5,
+  enableAdaptiveQuality = true,
+  targetFps = 60
 }, ref) => {
   const meshRef = useRef<Mesh>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+
+  // Use adaptive shader effects hook
+  const {
+    shaderMaterial,
+    qualityLevel,
+    isAdapting,
+    performanceStats,
+    isLowPerformance,
+    adaptiveValues
+  } = useAdaptiveShaderEffects({
+    shimmerIntensity,
+    shimmerSpeed,
+    glowIntensity,
+    surfaceDisplacement,
+    lightDirection: new Vector3(1, 1, 1).normalize(),
+    lightColor: new Vector3(1, 1, 1),
+    dayNightCycle: 0.0,
+    enabled: enableShaderEffects,
+    targetFps,
+    enableAdaptiveQuality
+  });
 
   // Create high-quality procedural Earth texture
   const earthTexture = useMemo(() => {
@@ -135,40 +198,77 @@ export const Earth = forwardRef<Mesh, EarthProps>(({
         receiveShadow
       >
         <sphereGeometry args={[1, 128, 128]} />
-        <meshStandardMaterial
-          map={earthTexture}
-          normalMap={normalMap}
-          roughness={0.7}
-          metalness={0.1}
-          emissive="#0A1A2A"
-          emissiveIntensity={0.05}
-          transparent={false}
-        />
+        {enableShaderEffects && shaderMaterial ? (
+          <primitive object={shaderMaterial} attach="material" />
+        ) : (
+          <meshStandardMaterial
+            map={earthTexture}
+            normalMap={normalMap}
+            roughness={0.7}
+            metalness={0.1}
+            emissive="#0A1A2A"
+            emissiveIntensity={0.05}
+            transparent={false}
+          />
+        )}
       </mesh>
 
-      {/* Atmospheric effect */}
+      {/* Enhanced atmospheric effect */}
       {enableAtmosphere && (
-        <mesh>
-          <sphereGeometry args={[1.02, 64, 64]} />
-          <meshBasicMaterial
-            color="#4A90E2"
-            transparent
-            opacity={0.1}
-            side={2} // DoubleSide
-          />
-        </mesh>
+        <Atmosphere
+          enableGlow={true}
+          enableParticles={false}
+          intensity={0.4}
+          color="#4A90E2"
+          earthRadius={1.0}
+          glowIntensity={adaptiveValues.glowIntensity}
+          animationSpeed={adaptiveValues.shimmerSpeed * 0.5}
+          enableDynamicColors={true}
+        />
+      )}
+
+      {/* Particle system for space environment */}
+      {enableParticles && (
+        <ParticleSystem
+          particleCount={particleCount}
+          particleSize={particleSize}
+          particleColor={particleColor}
+          animationSpeed={animationSpeed}
+          spreadRadius={spreadRadius}
+          enabled={enableParticles}
+        />
       )}
 
       {/* Performance monitoring indicator */}
       {process.env.NODE_ENV === 'development' && (
-        <mesh position={[0, 0, 1.5]}>
-          <boxGeometry args={[0.05, 0.05, 0.05]} />
-          <meshBasicMaterial
-            color={isLoaded ? "#00FF00" : "#FF0000"}
-            transparent
-            opacity={0.8}
-          />
-        </mesh>
+        <group position={[0, 0, 1.5]}>
+          {/* Load status indicator */}
+          <mesh position={[0, 0.1, 0]}>
+            <boxGeometry args={[0.05, 0.05, 0.05]} />
+            <meshBasicMaterial
+              color={isLoaded ? "#00FF00" : "#FF0000"}
+              transparent
+              opacity={0.8}
+            />
+          </mesh>
+
+          {/* Performance quality indicator */}
+          <mesh position={[0, -0.1, 0]}>
+            <boxGeometry args={[0.05, 0.05, 0.05]} />
+            <meshBasicMaterial
+              color={
+                isLowPerformance ? "#FF0000" :
+                isAdapting ? "#FFA500" :
+                qualityLevel === 'ultra' ? "#00FF00" :
+                qualityLevel === 'high' ? "#00FF80" :
+                qualityLevel === 'medium' ? "#FFFF00" :
+                qualityLevel === 'low' ? "#FF8000" : "#FF0000"
+              }
+              transparent
+              opacity={0.8}
+            />
+          </mesh>
+        </group>
       )}
     </group>
   );
