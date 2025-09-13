@@ -1,5 +1,5 @@
 import React, { Suspense, useState, useRef } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useThree } from '@react-three/fiber';
 import { Stats } from '@react-three/drei';
 import { Earth } from './Earth';
 import { Atmosphere } from './Atmosphere';
@@ -10,7 +10,7 @@ import { PerformanceMonitor } from './PerformanceMonitor';
 import { PerformanceCollector } from './PerformanceCollector';
 import { WebGLFallback } from './WebGLFallback';
 import { CameraControls } from './CameraControls';
-import { useEarthPerformance } from '../hooks/useEarthPerformance';
+// Performance is collected inside Canvas via PerformanceCollector
 
 interface PerformanceData {
   fps: number;
@@ -38,9 +38,9 @@ export const SatelliteVisualization: React.FC = () => {
     scale: 1.0
   });
 
-  // Performance monitoring for Earth
-  const { metrics: earthPerformance } = useEarthPerformance({}, earthRef);
+  // Performance is tracked by <PerformanceCollector /> inside the Canvas
 
+  console.debug('[SatelliteVisualization] render start');
   return (
     <div className="w-full h-full relative">
       <Canvas
@@ -61,10 +61,16 @@ export const SatelliteVisualization: React.FC = () => {
         performance={{ min: 0.5 }}
         className="w-full h-full"
         onCreated={({ gl }) => {
+          console.debug('[SatelliteVisualization] Canvas created, setting clear color');
           gl.setClearColor('#0B0E14', 1);
         }}
       >
         <Suspense fallback={null}>
+          {/* Bridge to expose camera actions to DOM controls */}
+          <CameraBridge onReady={(api) => {
+            console.debug('[SatelliteVisualization] CameraBridge ready');
+            (window as any).__cameraApi = api;
+          }} />
           <SceneLighting />
           <Earth
             ref={earthRef}
@@ -113,6 +119,14 @@ export const SatelliteVisualization: React.FC = () => {
         onRotationSpeedChange={(speed) => setEarthConfig(prev => ({ ...prev, rotationSpeed: speed }))}
         onAtmosphereToggle={(enabled) => setEarthConfig(prev => ({ ...prev, enableAtmosphere: enabled }))}
         onScaleChange={(scale) => setEarthConfig(prev => ({ ...prev, scale }))}
+        onResetCamera={() => {
+          const api = (window as any).__cameraApi as { resetCamera: () => void } | undefined;
+          if (api?.resetCamera) {
+            api.resetCamera();
+          } else {
+            console.warn('[SatelliteVisualization] Camera API not ready');
+          }
+        }}
         initialRotationEnabled={earthConfig.enableRotation}
         initialRotationSpeed={earthConfig.rotationSpeed}
         initialAtmosphereEnabled={earthConfig.enableAtmosphere}
@@ -123,4 +137,20 @@ export const SatelliteVisualization: React.FC = () => {
       <WebGLFallback />
     </div>
   );
+};
+
+// Internal component rendered inside Canvas to safely use R3F hooks
+const CameraBridge: React.FC<{ onReady: (api: { resetCamera: () => void }) => void }> = ({ onReady }) => {
+  const { camera } = useThree();
+  React.useEffect(() => {
+    const api = {
+      resetCamera: () => {
+        console.debug('[CameraBridge] resetCamera called');
+        camera.position.set(0, 0, 5);
+        camera.lookAt(0, 0, 0);
+      },
+    };
+    onReady(api);
+  }, [camera, onReady]);
+  return null;
 };

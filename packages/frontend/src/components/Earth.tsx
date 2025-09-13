@@ -86,6 +86,18 @@ export const Earth = forwardRef<Mesh, EarthProps>(({
     enableAdaptiveQuality
   });
 
+  // Debug log for shader/effects state
+  if (process.env.NODE_ENV !== 'production') {
+    // eslint-disable-next-line no-console
+    console.debug('[Earth] shaderEffects', {
+      enableShaderEffects,
+      qualityLevel,
+      isAdapting,
+      isLowPerformance,
+      adaptiveValues
+    });
+  }
+
   // Create high-quality procedural Earth texture
   const earthTexture = useMemo(() => {
     const canvas = document.createElement('canvas');

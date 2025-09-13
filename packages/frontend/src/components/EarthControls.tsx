@@ -1,5 +1,4 @@
 import React, { useState, useCallback } from 'react';
-import { useThree } from '@react-three/fiber';
 
 interface EarthControlsProps {
   /** Callback when rotation is toggled */
@@ -18,6 +17,8 @@ interface EarthControlsProps {
   initialAtmosphereEnabled?: boolean;
   /** Initial scale */
   initialScale?: number;
+  /** Optional camera reset callback provided by parent */
+  onResetCamera?: () => void;
 }
 
 export const EarthControls: React.FC<EarthControlsProps> = ({
@@ -28,9 +29,9 @@ export const EarthControls: React.FC<EarthControlsProps> = ({
   initialRotationEnabled = true,
   initialRotationSpeed = 1.0,
   initialAtmosphereEnabled = true,
-  initialScale = 1.0
+  initialScale = 1.0,
+  onResetCamera
 }) => {
-  const { camera } = useThree();
   const [rotationEnabled, setRotationEnabled] = useState(initialRotationEnabled);
   const [rotationSpeed, setRotationSpeed] = useState(initialRotationSpeed);
   const [atmosphereEnabled, setAtmosphereEnabled] = useState(initialAtmosphereEnabled);
@@ -61,9 +62,13 @@ export const EarthControls: React.FC<EarthControlsProps> = ({
   }, [onScaleChange]);
 
   const resetCamera = useCallback(() => {
-    camera.position.set(0, 0, 5);
-    camera.lookAt(0, 0, 0);
-  }, [camera]);
+    if (onResetCamera) {
+      onResetCamera();
+    } else {
+      // eslint-disable-next-line no-console
+      console.warn('[EarthControls] onResetCamera not provided; camera reset no-op');
+    }
+  }, [onResetCamera]);
 
   return (
     <div className="earth-controls" role="group" aria-label="Earth visualization controls">
