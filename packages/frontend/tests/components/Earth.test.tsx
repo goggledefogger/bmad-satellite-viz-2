@@ -83,4 +83,23 @@ describe('Earth Component', () => {
     await renderer.update(<Earth enableRotation={false} />);
     expect(renderer.scene).toBeDefined();
   });
+
+  it('renders with and without shader effects (smoke)', async () => {
+    const noShader = await ReactThreeTestRenderer.create(
+      <Earth enableShaderEffects={false} enableAtmosphere={false} enableParticles={false} />
+    );
+    expect(noShader.scene).toBeDefined();
+
+    const withShader = await ReactThreeTestRenderer.create(
+      <Earth enableShaderEffects={true} enableAtmosphere={false} enableParticles={false} />
+    );
+    expect(withShader.scene).toBeDefined();
+  });
+
+  it('renders with Atmosphere and ParticleSystem enabled (smoke)', async () => {
+    const renderer = await ReactThreeTestRenderer.create(
+      <Earth enableAtmosphere={true} enableParticles={true} />
+    );
+    expect(renderer.scene).toBeDefined();
+  });
 });

@@ -1,7 +1,7 @@
 import React, { useRef, useMemo, useState, useEffect, forwardRef } from 'react';
-import { useFrame, useLoader } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 import { Mesh, TextureLoader, RepeatWrapping, LinearFilter, LinearMipmapLinearFilter, Vector3 } from 'three';
-import { useTexture, primitive } from '@react-three/drei';
+import { primitive } from '@react-three/drei';
 import { useAdaptiveShaderEffects } from '../hooks/useAdaptiveShaderEffects';
 import { ParticleSystem } from './ParticleSystem';
 import { Atmosphere } from './Atmosphere';
